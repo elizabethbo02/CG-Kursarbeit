@@ -268,7 +268,7 @@ void render()
 
 	glm::mat4 model = glm::mat4(1.0f);
 	//	model = glm::rotate(model, glm::radians(30.0f), glm::vec3(0, 0, 1));
-	model = glm::translate(model, glm::vec3(0.0f, -1.0f, 0.0f));
+	model = glm::translate(model, glm::vec3(0.0f, 0.05f, 0.0f));
 	//depending on the model size, the model may have to be scaled up or down to be visible
 //  model = glm::scale(model, glm::vec3(0.001f, 0.001f, 0.001f));
 	model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));
