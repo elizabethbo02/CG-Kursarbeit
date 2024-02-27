@@ -234,6 +234,7 @@ bool initGL()
 
 	//gModel.LoadModel("./models/nanosuit/nanosuit.obj");
 	gModel.LoadModel("./models/Goldfish/13001_Ryukin_Goldfish_v1_L3.obj");
+	//gModel.LoadModel("./models/Fish_2/12265_Fish_v1_L2.obj");
 
 	gVAO = CreateCube(1.0f, gVBO, gEBO);
 
