@@ -1,3 +1,5 @@
+//#include "stdafx.h"
+//#define GLEW_STATIC
 #include <GL\glew.h>
 
 #include <SDL.h>
@@ -9,6 +11,10 @@
 #include <glm\gtc\matrix_transform.hpp>
 #include <glm\gtc\type_ptr.hpp>
 
+#include "GeometryNode.h"
+#include "GroupNode.h"
+#include "TransformNode.h"
+
 #include <iostream>
 
 #include "Shader.h"
@@ -18,9 +24,10 @@
 bool init();
 bool initGL();
 void render();
-GLuint CreateCube(float, GLuint&, GLuint&);
-void DrawCube(GLuint id);
+//GLuint CreateCube(float, GLuint&, GLuint&);
+//void DrawCube(GLuint id);
 void close();
+void CreateScene();
 
 //The window we'll be rendering to
 SDL_Window* gWindow = NULL;
@@ -32,6 +39,8 @@ Shader gShader;
 Model gModel;
 
 GLuint gVAO, gVBO, gEBO;
+
+GroupNode* gRoot;
 
 // camera
 Camera camera(glm::vec3(0.0f, 2.0f, 3.0f));
@@ -45,6 +54,10 @@ float lastFrame = 0.0f;
 
 // lighting
 glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
+
+//statics
+unsigned int Node::genID;
+glm::mat4 TransformNode::transformMatrix = glm::mat4(1.0f);
 
 //event handlers
 void HandleKeyDown(const SDL_KeyboardEvent& key);
@@ -236,11 +249,51 @@ bool initGL()
 	gModel.LoadModel("./models/Goldfish/13001_Ryukin_Goldfish_v1_L3.obj");
 	//gModel.LoadModel("./models/Fish_2/12265_Fish_v1_L2.obj");
 
-	gVAO = CreateCube(1.0f, gVBO, gEBO);
+	//gVAO = CreateCube(1.0f, gVBO, gEBO);
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); //other modes GL_FILL, GL_POINT
 
 	return success;
+}
+
+void CreateScene()
+{
+	gRoot = new GroupNode("root");
+
+	TransformNode* trGolden = new TransformNode("Gold Fish transform");
+	trGolden->SetTranslation(glm::vec3(0.0f, -45.0f, -15.0f));
+	trGolden->SetScale(glm::vec3{ 0.1f,0.1f,0.1f });
+	trGolden->SetRotation(glm::vec3(60.0f, 0.0f, 0.0f));
+
+	GeometryNode* golden = new GeometryNode("Gold Fish");
+	golden->LoadFromFile("./models/Goldfish/13001_Ryukin_Goldfish_v1_L3.obj");
+	golden->SetShader(&gShader);
+	trGolden->AddChild(golden);
+	gRoot->AddChild(trGolden);
+
+	/*
+	TransformNode* trTearDrop = new TransformNode("TearDrop transform");
+	trTearDrop->SetScale(glm::vec3{ 1.0f,1.0f,1.0f });
+	trTearDrop->SetTranslation(glm::vec3(0.0f, 5.0f, -15.0f));
+	trTearDrop->SetRotation(glm::vec3(30.0f, 0.0f, 0.0f));
+
+	GeometryNode* TearDrop = new GeometryNode("TearDrop");
+	TearDrop->LoadFromFile("models/Drops/Drops.obj");
+	TearDrop->SetShader(&gShader);
+	trTearDrop->AddChild(TearDrop);
+	gRoot->AddChild(trTearDrop);
+
+	TransformNode* trHead = new TransformNode("Head transform");
+	trHead->SetScale(glm::vec3{ 2.0f,2.0f,2.0f });
+	trHead->SetTranslation(glm::vec3(0.0f, 20.0f, -30.0f));
+	trHead->SetRotation(glm::vec3(30.0f, 0.0f, 0.0f));
+
+	GeometryNode* Head = new GeometryNode("Head");
+	Head->LoadFromFile("models/head/glava.obj");
+	Head->SetShader(&gShader);
+	trHead->AddChild(Head);
+	gRoot->AddChild(trHead);
+	*/
 }
 
 void close()
@@ -266,12 +319,12 @@ void render()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glm::mat4 model = glm::mat4(1.0f);
-	model = glm::rotate(model, glm::radians(250.0f), glm::vec3(1, 0, 0));
-	model = glm::translate(model, glm::vec3(-0.5f, 1.0f, 1.5f));
+	//model = glm::rotate(model, glm::radians(250.0f), glm::vec3(1, 0, 0));
+	//model = glm::translate(model, glm::vec3(-0.5f, 1.0f, 1.5f));
 
 	//depending on the model size, the model may have to be scaled up or down to be visible
-//  model = glm::scale(model, glm::vec3(0.001f, 0.001f, 0.001f));
-	model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
+    //model = glm::scale(model, glm::vec3(0.001f, 0.001f, 0.001f));
+	//model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
 
 	glm::mat4 view = camera.GetViewMatrix();
 	glm::mat4 proj = glm::perspective(glm::radians(camera.Zoom), 4.0f / 3.0f, 0.1f, 100.0f);
