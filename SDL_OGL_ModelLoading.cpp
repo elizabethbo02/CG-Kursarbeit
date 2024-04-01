@@ -43,7 +43,7 @@ GLuint gVAO, gVBO, gEBO;
 GroupNode* gRoot;
 
 // camera
-Camera camera(glm::vec3(0.0f, 2.0f, 3.0f));
+Camera camera(glm::vec3(3.0f, 2.0f, 6.0f));
 float lastX = -1;
 float lastY = -1;
 bool firstMouse = true;
@@ -64,18 +64,22 @@ void HandleKeyDown(const SDL_KeyboardEvent& key);
 void HandleMouseMotion(const SDL_MouseMotionEvent& motion);
 void HandleMouseWheel(const SDL_MouseWheelEvent& wheel);
 
+Uint32 startTime;
 
 int main(int argc, char* args[])
 {
 	init(); 
 
+	
 	SDL_Event e;
 	//While application is running
 	bool quit = false;
+	CreateScene();
 	while (!quit)
 	{
 		// per-frame time logic
 		// --------------------
+		startTime = SDL_GetTicks();
 		float currentFrame = SDL_GetTicks() / 1000.0f;
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
@@ -184,7 +188,7 @@ bool init()
 
 
 		//Create window
-		gWindow = SDL_CreateWindow("SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480,
+		gWindow = SDL_CreateWindow("Underwater World", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480,
 			SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN /*| SDL_WINDOW_FULLSCREEN*/);
 		if (gWindow == NULL)
 		{
@@ -237,7 +241,7 @@ bool initGL()
 		printf("Error initializing OpenGL! %s\n", gluErrorString(error));
 	}
 
-	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	glClearColor(0.5f, 0.9f, 1.0f, 1.0f);
 	glEnable(GL_DEPTH_TEST);
 
 	glEnable(GL_BLEND);
@@ -246,8 +250,6 @@ bool initGL()
 	gShader.Load("./shaders/vertex.vert", "./shaders/fragment.frag");
 
 	//gModel.LoadModel("./models/nanosuit/nanosuit.obj");
-	gModel.LoadModel("./models/Goldfish/13001_Ryukin_Goldfish_v1_L3.obj");
-	//gModel.LoadModel("./models/Fish_2/12265_Fish_v1_L2.obj");
 
 	//gVAO = CreateCube(1.0f, gVBO, gEBO);
 
@@ -260,16 +262,40 @@ void CreateScene()
 {
 	gRoot = new GroupNode("root");
 
-	TransformNode* trGolden = new TransformNode("Gold Fish transform");
-	trGolden->SetTranslation(glm::vec3(0.0f, -45.0f, -15.0f));
-	trGolden->SetScale(glm::vec3{ 0.1f,0.1f,0.1f });
-	trGolden->SetRotation(glm::vec3(60.0f, 0.0f, 0.0f));
+	TransformNode* trGolden = new TransformNode("Gold Fish");
+	trGolden->SetTranslation(glm::vec3(0.0f, 0.0f, -15.0f));
+	trGolden->SetScale(glm::vec3{ 0.7f,0.7f,0.7f });
+	trGolden->SetRotation(glm::vec3(-90.0f, 0.0f, 0.0f));
 
 	GeometryNode* golden = new GeometryNode("Gold Fish");
 	golden->LoadFromFile("./models/Goldfish/13001_Ryukin_Goldfish_v1_L3.obj");
 	golden->SetShader(&gShader);
 	trGolden->AddChild(golden);
 	gRoot->AddChild(trGolden);
+
+	TransformNode* trFish = new TransformNode("Other Fish");
+	trFish->SetTranslation(glm::vec3(12.0f, 8.0f, -30.0f));
+	trFish->SetScale(glm::vec3{ 0.4f,0.4f,0.4f });
+	trFish->SetRotation(glm::vec3(-90.0f, 0.0f, 0.0f));
+
+	GeometryNode* SecFish = new GeometryNode("Other Fish");
+	SecFish->LoadFromFile("./models/Fish_2/12265_Fish_v1_L2.obj");
+	SecFish->SetShader(&gShader);
+	trFish->AddChild(SecFish);
+	gRoot->AddChild(trFish);
+
+	TransformNode* trSand = new TransformNode("Sand");
+	trSand->SetTranslation(glm::vec3(4.0f, 17.0f, -2.0f));
+	trSand->SetScale(glm::vec3{ 2.5f,2.5f,2.5f });
+	trSand->SetRotation(glm::vec3(90.0f, 0.0f, 0.0f));
+
+	GeometryNode* sandfield = new GeometryNode("Sand");
+	sandfield->LoadFromFile("./models/Sand/model.obj");
+	sandfield->SetShader(&gShader);
+	trSand->AddChild(sandfield);
+	gRoot->AddChild(trSand);
+
+
 
 	/*
 	TransformNode* trTearDrop = new TransformNode("TearDrop transform");
@@ -318,7 +344,7 @@ void render()
 	//Clear color buffer
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	glm::mat4 model = glm::mat4(1.0f);
+	//glm::mat4 model = glm::mat4(1.0f);
 	//model = glm::rotate(model, glm::radians(250.0f), glm::vec3(1, 0, 0));
 	//model = glm::translate(model, glm::vec3(-0.5f, 1.0f, 1.5f));
 
@@ -329,79 +355,79 @@ void render()
 	glm::mat4 view = camera.GetViewMatrix();
 	glm::mat4 proj = glm::perspective(glm::radians(camera.Zoom), 4.0f / 3.0f, 0.1f, 100.0f);
 
-	glm::mat3 normalMat = glm::transpose(glm::inverse(model));
+	//glm::mat3 normalMat = glm::transpose(glm::inverse(model));
 
 	glUseProgram(gShader.ID);
-	gShader.setMat4("model", model);
+	//gShader.setMat4("model", model);
 	gShader.setMat4("view", view);
 	gShader.setMat4("proj", proj);
-	gShader.setMat3("normalMat", normalMat);
+	//gShader.setMat3("normalMat", normalMat);
 
 	//lighting
 	gShader.setVec3("light.diffuse", 1.0f, 1.0f, 1.0f);
 	gShader.setVec3("light.position", lightPos);
 	gShader.setVec3("viewPos", camera.Position);
 
-	gModel.Draw(gShader);
-
+	//gModel.Draw(gShader);
+	gRoot->Traverse();
 	//	DrawCube(gVAO);
 }
 
-GLuint CreateCube(float width, GLuint& VBO, GLuint& EBO)
-{
-	GLfloat vertices[] = {
-		//vertex position
-		0.5f,  0.5f, 0.0f, 1.0f, 1.0f,  // top right
-		0.5f, -0.5f, 0.0f, 1.0f, 0.0f, // bottom right
-		-0.5f, -0.5f, 0.0f, 0.0f, 0.0f,  // bottom left
-		-0.5f,  0.5f, 0.0f, 0.0f, 1.0f   // top left 
-	};
-	//indexed drawing - we will be using the indices to point to a vertex in the vertices array
-	GLuint indices[] = {
-		0, 1, 3,   // first triangle
-		1, 2, 3    // second triangle
-	};
+//GLuint CreateCube(float width, GLuint& VBO, GLuint& EBO)
+//{
+//	GLfloat vertices[] = {
+//		//vertex position
+//		0.5f,  0.5f, 0.0f, 1.0f, 1.0f,  // top right
+//		0.5f, -0.5f, 0.0f, 1.0f, 0.0f, // bottom right
+//		-0.5f, -0.5f, 0.0f, 0.0f, 0.0f,  // bottom left
+//		-0.5f,  0.5f, 0.0f, 0.0f, 1.0f   // top left 
+//	};
+//	//indexed drawing - we will be using the indices to point to a vertex in the vertices array
+//	GLuint indices[] = {
+//		0, 1, 3,   // first triangle
+//		1, 2, 3    // second triangle
+//	};
+//
+//
+//	GLuint VAO;
+//	glGenBuffers(1, &VBO);
+//	glGenBuffers(1, &EBO);
+//	glGenVertexArrays(1, &VAO);
+//
+//	glBindVertexArray(VAO);
+//	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+//	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+//
+//	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+//	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+//
+//	//we have to change the stride to 6 floats, as each vertex now has 6 attribute values
+//	//the last value (pointer) is still 0, as the position values start from the beginning
+//	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0); //the data comes from the currently bound GL_ARRAY_BUFFER
+//	glEnableVertexAttribArray(0);
+//
+//	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+//	glEnableVertexAttribArray(1);
+//
+//	// note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
+//	glBindBuffer(GL_ARRAY_BUFFER, 0);
+//
+//	// You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
+//	// VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
+//	glBindVertexArray(0);
+//	//the elements buffer must be unbound after the vertex array otherwise the vertex array will not have an associated elements buffer array
+//	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+//
+//	return VAO;
+//}
 
-
-	GLuint VAO;
-	glGenBuffers(1, &VBO);
-	glGenBuffers(1, &EBO);
-	glGenVertexArrays(1, &VAO);
-
-	glBindVertexArray(VAO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-	//we have to change the stride to 6 floats, as each vertex now has 6 attribute values
-	//the last value (pointer) is still 0, as the position values start from the beginning
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0); //the data comes from the currently bound GL_ARRAY_BUFFER
-	glEnableVertexAttribArray(0);
-
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-	glEnableVertexAttribArray(1);
-
-	// note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	// You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
-	// VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
-	glBindVertexArray(0);
-	//the elements buffer must be unbound after the vertex array otherwise the vertex array will not have an associated elements buffer array
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-	return VAO;
-}
-
-void DrawCube(GLuint vaoID)
-{
-	glBindVertexArray(vaoID);
-
-	//glDrawElements uses the indices in the EBO to get to the vertices in the VBO
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-	glBindVertexArray(0);
-}
+//void DrawCube(GLuint vaoID)
+//{
+//	glBindVertexArray(vaoID);
+//
+//	//glDrawElements uses the indices in the EBO to get to the vertices in the VBO
+//	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+//	glBindVertexArray(0);
+//}
 
 
