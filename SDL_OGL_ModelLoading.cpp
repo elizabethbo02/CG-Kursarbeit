@@ -59,12 +59,102 @@ glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
 unsigned int Node::genID;
 glm::mat4 TransformNode::transformMatrix = glm::mat4(1.0f);
 
+glm::vec3 deCasteljau(std::vector<glm::vec3> points, float t);
+
 //event handlers
 void HandleKeyDown(const SDL_KeyboardEvent& key);
 void HandleMouseMotion(const SDL_MouseMotionEvent& motion);
 void HandleMouseWheel(const SDL_MouseWheelEvent& wheel);
 
 Uint32 startTime;
+
+std::vector<glm:: vec3> animation = {
+glm:: vec3(5.0f, 5.0f, -10.0f) ,
+glm::vec3(10.0f, 10.0f, -15.0f),
+// we can add however many control points as we like (main points where the tear drop should go through)
+};
+
+glm::vec3 deCasteljau(std::vector<glm::vec3> points, float t) {
+	if (points.size() == 1) {
+		return points[0];
+	}
+	std::vector<glm::vec3> newPoints;
+	for (int i = 0; i < points.size() - 1; i++) {
+		newPoints.push_back((1 - t) * points[i] + t * points[i + 1]);
+	}
+	return deCasteljau(newPoints, t);
+}
+
+float t = 0;
+float anotherT = 3;
+
+void CreateScene()
+{
+	gRoot = new GroupNode("root");
+
+	TransformNode* trGolden = new TransformNode("Gold Fish");
+	trGolden->SetTranslation(glm::vec3(0.0f, 0.0f, -15.0f));
+	trGolden->SetScale(glm::vec3{ 0.7f,0.7f,0.7f });
+	trGolden->SetRotation(glm::vec3(-90.0f, 0.0f, 0.0f));
+
+	GeometryNode* golden = new GeometryNode("Gold Fish");
+	golden->LoadFromFile("./models/Goldfish/13001_Ryukin_Goldfish_v1_L3.obj");
+	golden->SetShader(&gShader);
+	trGolden->AddChild(golden);
+	gRoot->AddChild(trGolden);
+
+	TransformNode* trFish = new TransformNode("Other Fish");
+	trFish->SetTranslation(glm::vec3(12.0f, 8.0f, -30.0f));
+	trFish->SetScale(glm::vec3{ 0.4f,0.4f,0.4f });
+	trFish->SetRotation(glm::vec3(-90.0f, 0.0f, 0.0f));
+
+	GeometryNode* SecFish = new GeometryNode("Other Fish");
+	SecFish->LoadFromFile("./models/Fish_2/12265_Fish_v1_L2.obj");
+	SecFish->SetShader(&gShader);
+	trFish->AddChild(SecFish);
+	gRoot->AddChild(trFish);
+
+	TransformNode* trSand = new TransformNode("Sand");
+	trSand->SetTranslation(glm::vec3(4.0f, 17.0f, -2.0f));
+	trSand->SetScale(glm::vec3{ 2.5f,2.5f,2.5f });
+	trSand->SetRotation(glm::vec3(90.0f, 0.0f, 0.0f));
+
+	GeometryNode* sandfield = new GeometryNode("Sand");
+	sandfield->LoadFromFile("./models/Sand/model.obj");
+	sandfield->SetShader(&gShader);
+	trSand->AddChild(sandfield);
+	gRoot->AddChild(trSand);
+
+	
+	
+	// Update fish translation based on de Casteljau algorithm
+	if (t <= 1) {
+		t += 0.001f;
+		trFish->SetTranslation(deCasteljau({ animation }, t));
+		if (anotherT <= 1)
+		{
+			anotherT += 0.002f;
+			trFish->SetTranslation(deCasteljau({ animation }, anotherT));
+		}
+		else
+		{
+			trFish->SetTranslation(deCasteljau({ animation }, t));
+		}
+	}
+	else {
+		t = 0;
+	}
+
+	
+	// Update fish translation based on time for animation
+	float time = SDL_GetTicks() * 0.001f;
+	float x = sin(time) * 5.0f; // Adjust the amplitude and frequency for desired movement
+	float y = cos(time) * 5.0f;
+	//trFish->SetTranslation(glm::vec3(x, y, -30.0f)); // Adjust the depth as needed
+	trFish->SetTranslation(deCasteljau({ animation }, t));
+
+}
+
 
 int main(int argc, char* args[])
 {
@@ -83,6 +173,14 @@ int main(int argc, char* args[])
 		float currentFrame = SDL_GetTicks() / 1000.0f;
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
+
+		/*
+		float time = SDL_GetTicks() * 0.001f;
+		float x = sin(time) * 5.0f; // Adjust the amplitude and frequency for desired movement
+		float y = cos(time) * 5.0f;
+		//TransformNode* trFish = dynamic_cast<TransformNode*>(gRoot->FindNodeByName("Other Fish"));
+		//trFish->SetTranslation(glm::vec3(x, y, -30.0f)); // Adjust the depth as needed
+*/
 
 		//Handle events on queue
 		while (SDL_PollEvent(&e) != 0)
@@ -249,7 +347,6 @@ bool initGL()
 
 	gShader.Load("./shaders/vertex.vert", "./shaders/fragment.frag");
 
-	//gModel.LoadModel("./models/nanosuit/nanosuit.obj");
 
 	//gVAO = CreateCube(1.0f, gVBO, gEBO);
 
@@ -258,69 +355,6 @@ bool initGL()
 	return success;
 }
 
-void CreateScene()
-{
-	gRoot = new GroupNode("root");
-
-	TransformNode* trGolden = new TransformNode("Gold Fish");
-	trGolden->SetTranslation(glm::vec3(0.0f, 0.0f, -15.0f));
-	trGolden->SetScale(glm::vec3{ 0.7f,0.7f,0.7f });
-	trGolden->SetRotation(glm::vec3(-90.0f, 0.0f, 0.0f));
-
-	GeometryNode* golden = new GeometryNode("Gold Fish");
-	golden->LoadFromFile("./models/Goldfish/13001_Ryukin_Goldfish_v1_L3.obj");
-	golden->SetShader(&gShader);
-	trGolden->AddChild(golden);
-	gRoot->AddChild(trGolden);
-
-	TransformNode* trFish = new TransformNode("Other Fish");
-	trFish->SetTranslation(glm::vec3(12.0f, 8.0f, -30.0f));
-	trFish->SetScale(glm::vec3{ 0.4f,0.4f,0.4f });
-	trFish->SetRotation(glm::vec3(-90.0f, 0.0f, 0.0f));
-
-	GeometryNode* SecFish = new GeometryNode("Other Fish");
-	SecFish->LoadFromFile("./models/Fish_2/12265_Fish_v1_L2.obj");
-	SecFish->SetShader(&gShader);
-	trFish->AddChild(SecFish);
-	gRoot->AddChild(trFish);
-
-	TransformNode* trSand = new TransformNode("Sand");
-	trSand->SetTranslation(glm::vec3(4.0f, 17.0f, -2.0f));
-	trSand->SetScale(glm::vec3{ 2.5f,2.5f,2.5f });
-	trSand->SetRotation(glm::vec3(90.0f, 0.0f, 0.0f));
-
-	GeometryNode* sandfield = new GeometryNode("Sand");
-	sandfield->LoadFromFile("./models/Sand/model.obj");
-	sandfield->SetShader(&gShader);
-	trSand->AddChild(sandfield);
-	gRoot->AddChild(trSand);
-
-
-
-	/*
-	TransformNode* trTearDrop = new TransformNode("TearDrop transform");
-	trTearDrop->SetScale(glm::vec3{ 1.0f,1.0f,1.0f });
-	trTearDrop->SetTranslation(glm::vec3(0.0f, 5.0f, -15.0f));
-	trTearDrop->SetRotation(glm::vec3(30.0f, 0.0f, 0.0f));
-
-	GeometryNode* TearDrop = new GeometryNode("TearDrop");
-	TearDrop->LoadFromFile("models/Drops/Drops.obj");
-	TearDrop->SetShader(&gShader);
-	trTearDrop->AddChild(TearDrop);
-	gRoot->AddChild(trTearDrop);
-
-	TransformNode* trHead = new TransformNode("Head transform");
-	trHead->SetScale(glm::vec3{ 2.0f,2.0f,2.0f });
-	trHead->SetTranslation(glm::vec3(0.0f, 20.0f, -30.0f));
-	trHead->SetRotation(glm::vec3(30.0f, 0.0f, 0.0f));
-
-	GeometryNode* Head = new GeometryNode("Head");
-	Head->LoadFromFile("models/head/glava.obj");
-	Head->SetShader(&gShader);
-	trHead->AddChild(Head);
-	gRoot->AddChild(trHead);
-	*/
-}
 
 void close()
 {

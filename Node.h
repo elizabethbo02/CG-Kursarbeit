@@ -34,4 +34,19 @@ public:
 	}
 
 	virtual void Traverse() = 0;
+
+	/*
+	//find node by name
+	virtual Node* FindNodeByName(const std::string& nameToFind);
+*/
 };
+
+/*
+//find node by name
+inline Node* Node::FindNodeByName(const std::string& nameToFind) {
+	if (name == nameToFind) {
+		return this;
+	}
+	return nullptr;
+}
+*/
