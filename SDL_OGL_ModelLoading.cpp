@@ -24,8 +24,7 @@
 bool init();
 bool initGL();
 void render();
-//GLuint CreateCube(float, GLuint&, GLuint&);
-//void DrawCube(GLuint id);
+
 void close();
 void CreateScene();
 
@@ -42,8 +41,10 @@ GLuint gVAO, gVBO, gEBO;
 
 GroupNode* gRoot;
 
+bool sceneIsLoaded;
+
 // camera
-Camera camera(glm::vec3(3.0f, 2.0f, 6.0f));
+Camera camera(glm::vec3(3.0f, 4.0f, 13.0f));
 float lastX = -1;
 float lastY = -1;
 bool firstMouse = true;
@@ -59,7 +60,7 @@ glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
 unsigned int Node::genID;
 glm::mat4 TransformNode::transformMatrix = glm::mat4(1.0f);
 
-glm::vec3 deCasteljau(std::vector<glm::vec3> points, float t);
+glm::vec3 deCasteljau(std::vector<glm::vec3> points, float t_forward);
 
 //event handlers
 void HandleKeyDown(const SDL_KeyboardEvent& key);
@@ -68,31 +69,63 @@ void HandleMouseWheel(const SDL_MouseWheelEvent& wheel);
 
 Uint32 startTime;
 
-std::vector<glm:: vec3> animation = {
-glm:: vec3(5.0f, 5.0f, -10.0f) ,
-glm::vec3(10.0f, 10.0f, -15.0f),
+TransformNode* trYellow;
+TransformNode* trGolden;
+
+std::vector<glm:: vec3> animationYellow = {
+glm:: vec3(30.0f, 5.0f, -18.0f) ,
+glm::vec3(16.0f, 6.0f, -18.0f),
+glm::vec3(9.0f, 4.0f, -18.0f),
+glm::vec3(0.0f, 6.0f, -18.0f),
+glm::vec3(-20.0f, 3.0f, -18.0f),
 // we can add however many control points as we like (main points where the tear drop should go through)
 };
 
-glm::vec3 deCasteljau(std::vector<glm::vec3> points, float t) {
+std::vector<glm::vec3> animationYellowBackPoints = {
+glm::vec3(-20.0f, 3.0f, -18.0f),
+glm::vec3(0.0f, 6.0f, -18.0f),
+glm::vec3(9.0f, 4.0f, -18.0f),
+glm::vec3(16.0f, 6.0f, -18.0f),
+glm::vec3(30.0f, 5.0f, -18.0f),
+};
+
+std::vector<glm::vec3> animationGolden = {
+glm::vec3(-30.0f, 2.0f, -10.0f) ,
+glm::vec3(-16.0f, 6.0f, -10.0f),
+glm::vec3(-9.0f, 0.0f, -10.0f),
+glm::vec3(0.0f, 4.0f, -10.0f),
+glm::vec3(20.0f, 0.0f, -10.0f),
+// we can add however many control points as we like (main points where the tear drop should go through)
+};
+
+std::vector<glm::vec3> animationGoldenBackPoints = {
+glm::vec3(20.0f, 0.0f, -10.0f),
+glm::vec3(0.0f, 4.0f, -10.0f),
+glm::vec3(-9.0f, 0.0f, -10.0f),
+glm::vec3(-16.0f, 6.0f, -10.0f),
+glm::vec3(-30.0f, 2.0f, -10.0f) ,
+};
+
+glm::vec3 deCasteljau(std::vector<glm::vec3> points, float t_forward) {
 	if (points.size() == 1) {
 		return points[0];
 	}
 	std::vector<glm::vec3> newPoints;
 	for (int i = 0; i < points.size() - 1; i++) {
-		newPoints.push_back((1 - t) * points[i] + t * points[i + 1]);
+		newPoints.push_back((1 - t_forward) * points[i] + t_forward * points[i + 1]);
 	}
-	return deCasteljau(newPoints, t);
+	return deCasteljau(newPoints, t_forward);
 }
 
-float t = 0;
-float anotherT = 3;
+float t_forward = 0.0f;
+float t_back = 0.0f;
+//float anotherT = 3;
 
 void CreateScene()
 {
 	gRoot = new GroupNode("root");
 
-	TransformNode* trGolden = new TransformNode("Gold Fish");
+	trGolden = new TransformNode("Gold Fish");
 	trGolden->SetTranslation(glm::vec3(0.0f, 0.0f, -15.0f));
 	trGolden->SetScale(glm::vec3{ 0.7f,0.7f,0.7f });
 	trGolden->SetRotation(glm::vec3(-90.0f, 0.0f, 0.0f));
@@ -103,16 +136,16 @@ void CreateScene()
 	trGolden->AddChild(golden);
 	gRoot->AddChild(trGolden);
 
-	TransformNode* trFish = new TransformNode("Other Fish");
-	trFish->SetTranslation(glm::vec3(12.0f, 8.0f, -30.0f));
-	trFish->SetScale(glm::vec3{ 0.4f,0.4f,0.4f });
-	trFish->SetRotation(glm::vec3(-90.0f, 0.0f, 0.0f));
+	trYellow = new TransformNode("Other Fish");
+	trYellow->SetTranslation(glm::vec3(12.0f, 8.0f, -30.0f));
+	trYellow->SetScale(glm::vec3{ 0.4f,0.4f,0.4f });
+	trYellow->SetRotation(glm::vec3(-90.0f, 0.0f, 0.0f));
 
 	GeometryNode* SecFish = new GeometryNode("Other Fish");
 	SecFish->LoadFromFile("./models/Fish_2/12265_Fish_v1_L2.obj");
 	SecFish->SetShader(&gShader);
-	trFish->AddChild(SecFish);
-	gRoot->AddChild(trFish);
+	trYellow->AddChild(SecFish);
+	gRoot->AddChild(trYellow);
 
 	TransformNode* trSand = new TransformNode("Sand");
 	trSand->SetTranslation(glm::vec3(4.0f, 17.0f, -2.0f));
@@ -124,35 +157,15 @@ void CreateScene()
 	sandfield->SetShader(&gShader);
 	trSand->AddChild(sandfield);
 	gRoot->AddChild(trSand);
-
-	
-	
+		
 	// Update fish translation based on de Casteljau algorithm
-	if (t <= 1) {
-		t += 0.001f;
-		trFish->SetTranslation(deCasteljau({ animation }, t));
-		if (anotherT <= 1)
-		{
-			anotherT += 0.002f;
-			trFish->SetTranslation(deCasteljau({ animation }, anotherT));
-		}
-		else
-		{
-			trFish->SetTranslation(deCasteljau({ animation }, t));
-		}
-	}
-	else {
-		t = 0;
-	}
-
+	
 	
 	// Update fish translation based on time for animation
 	float time = SDL_GetTicks() * 0.001f;
 	float x = sin(time) * 5.0f; // Adjust the amplitude and frequency for desired movement
-	float y = cos(time) * 5.0f;
+	float t_back = cos(time) * 5.0f;
 	//trFish->SetTranslation(glm::vec3(x, y, -30.0f)); // Adjust the depth as needed
-	trFish->SetTranslation(deCasteljau({ animation }, t));
-
 }
 
 
@@ -173,14 +186,6 @@ int main(int argc, char* args[])
 		float currentFrame = SDL_GetTicks() / 1000.0f;
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
-
-		/*
-		float time = SDL_GetTicks() * 0.001f;
-		float x = sin(time) * 5.0f; // Adjust the amplitude and frequency for desired movement
-		float y = cos(time) * 5.0f;
-		//TransformNode* trFish = dynamic_cast<TransformNode*>(gRoot->FindNodeByName("Other Fish"));
-		//trFish->SetTranslation(glm::vec3(x, y, -30.0f)); // Adjust the depth as needed
-*/
 
 		//Handle events on queue
 		while (SDL_PollEvent(&e) != 0)
@@ -206,11 +211,17 @@ int main(int argc, char* args[])
 				}
 				break;
 			case SDL_MOUSEMOTION:
-				HandleMouseMotion(e.motion);
-				break;
+				if (sceneIsLoaded)
+				{
+					HandleMouseMotion(e.motion);
+					break;
+				}
 			case SDL_MOUSEWHEEL:
-				HandleMouseWheel(e.wheel);
-				break;
+				if (sceneIsLoaded)
+				{
+					HandleMouseWheel(e.wheel);
+					break;
+				}
 			}
 		}
 
@@ -219,6 +230,7 @@ int main(int argc, char* args[])
 
 		//Update screen
 		SDL_GL_SwapWindow(gWindow);
+		sceneIsLoaded = true;
 	}
 
 	close();
@@ -346,10 +358,7 @@ bool initGL()
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	gShader.Load("./shaders/vertex.vert", "./shaders/fragment.frag");
-
-
-	//gVAO = CreateCube(1.0f, gVBO, gEBO);
-
+	
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); //other modes GL_FILL, GL_POINT
 
 	return success;
@@ -378,13 +387,30 @@ void render()
 	//Clear color buffer
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	//glm::mat4 model = glm::mat4(1.0f);
-	//model = glm::rotate(model, glm::radians(250.0f), glm::vec3(1, 0, 0));
-	//model = glm::translate(model, glm::vec3(-0.5f, 1.0f, 1.5f));
+	if (t_forward <= 1) {
+		t_forward += 0.002f;
+		trYellow->SetTranslation(deCasteljau({ animationYellow }, t_forward));
+		trGolden->SetTranslation(deCasteljau({ animationGolden }, t_forward));
 
-	//depending on the model size, the model may have to be scaled up or down to be visible
-    //model = glm::scale(model, glm::vec3(0.001f, 0.001f, 0.001f));
-	//model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
+		trYellow->SetRotation(glm::vec3(trYellow->GetRotation().x, trYellow->GetRotation().y, 0));
+		trGolden->SetRotation(glm::vec3(trGolden->GetRotation().x, trGolden->GetRotation().y, 0));
+
+		t_back = 0;
+	}
+	else {		
+		t_back += 0.002f;
+		trYellow->SetTranslation(deCasteljau({ animationYellowBackPoints }, t_back));
+		trGolden->SetTranslation(deCasteljau({ animationGoldenBackPoints }, t_back));
+
+		trYellow->SetRotation(glm::vec3(trYellow->GetRotation().x, trYellow->GetRotation().y, 180));
+		trGolden->SetRotation(glm::vec3(trGolden->GetRotation().x, trGolden->GetRotation().y, 180));
+		
+		if (t_back > 1)
+		{
+			t_forward = 0;
+		}
+	}
+
 
 	glm::mat4 view = camera.GetViewMatrix();
 	glm::mat4 proj = glm::perspective(glm::radians(camera.Zoom), 4.0f / 3.0f, 0.1f, 100.0f);
@@ -404,64 +430,9 @@ void render()
 
 	//gModel.Draw(gShader);
 	gRoot->Traverse();
-	//	DrawCube(gVAO);
+	
 }
 
-//GLuint CreateCube(float width, GLuint& VBO, GLuint& EBO)
-//{
-//	GLfloat vertices[] = {
-//		//vertex position
-//		0.5f,  0.5f, 0.0f, 1.0f, 1.0f,  // top right
-//		0.5f, -0.5f, 0.0f, 1.0f, 0.0f, // bottom right
-//		-0.5f, -0.5f, 0.0f, 0.0f, 0.0f,  // bottom left
-//		-0.5f,  0.5f, 0.0f, 0.0f, 1.0f   // top left 
-//	};
-//	//indexed drawing - we will be using the indices to point to a vertex in the vertices array
-//	GLuint indices[] = {
-//		0, 1, 3,   // first triangle
-//		1, 2, 3    // second triangle
-//	};
-//
-//
-//	GLuint VAO;
-//	glGenBuffers(1, &VBO);
-//	glGenBuffers(1, &EBO);
-//	glGenVertexArrays(1, &VAO);
-//
-//	glBindVertexArray(VAO);
-//	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-//	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-//
-//	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-//	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-//
-//	//we have to change the stride to 6 floats, as each vertex now has 6 attribute values
-//	//the last value (pointer) is still 0, as the position values start from the beginning
-//	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0); //the data comes from the currently bound GL_ARRAY_BUFFER
-//	glEnableVertexAttribArray(0);
-//
-//	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-//	glEnableVertexAttribArray(1);
-//
-//	// note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
-//	glBindBuffer(GL_ARRAY_BUFFER, 0);
-//
-//	// You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
-//	// VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
-//	glBindVertexArray(0);
-//	//the elements buffer must be unbound after the vertex array otherwise the vertex array will not have an associated elements buffer array
-//	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-//
-//	return VAO;
-//}
 
-//void DrawCube(GLuint vaoID)
-//{
-//	glBindVertexArray(vaoID);
-//
-//	//glDrawElements uses the indices in the EBO to get to the vertices in the VBO
-//	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-//	glBindVertexArray(0);
-//}
 
 

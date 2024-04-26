@@ -32,6 +32,11 @@ public:
 		rotation = rot;
 	}
 
+	glm::vec3 GetRotation()
+	{
+		return rotation;
+	}
+
 	void SetScale(const glm::vec3& sc)
 	{
 		scale = sc;

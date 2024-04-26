@@ -361,3 +361,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/ikpMP3.dll
+/irrKlang-64bit-1.6.0
+/irrKlang.dll
