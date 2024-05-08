@@ -14,6 +14,7 @@
 #include "GeometryNode.h"
 #include "GroupNode.h"
 #include "TransformNode.h"
+#include "stb_image.h"
 
 #include <iostream>
 
@@ -44,7 +45,7 @@ GroupNode* gRoot;
 bool sceneIsLoaded;
 
 // camera
-Camera camera(glm::vec3(3.0f, 4.0f, 13.0f));
+Camera camera(glm::vec3(2.0f, 4.0f, 14.0f));
 float lastX = -1;
 float lastY = -1;
 bool firstMouse = true;
@@ -69,18 +70,25 @@ void HandleMouseWheel(const SDL_MouseWheelEvent& wheel);
 
 Uint32 startTime;
 
+//Initializes the nessesary variables for the animation
 TransformNode* trYellow;
 TransformNode* trGolden;
 
+float t_forward = 0.0f;
+float t_back = 0.0f;
+float speedFactor = 1.0f;
+float lastFrameTime = SDL_GetTicks();
+
+//The forward animation control points
 std::vector<glm:: vec3> animationYellow = {
 glm:: vec3(30.0f, 5.0f, -18.0f) ,
 glm::vec3(16.0f, 6.0f, -18.0f),
 glm::vec3(9.0f, 4.0f, -18.0f),
 glm::vec3(0.0f, 6.0f, -18.0f),
 glm::vec3(-20.0f, 3.0f, -18.0f),
-// we can add however many control points as we like (main points where the tear drop should go through)
 };
 
+//The backward animation control points
 std::vector<glm::vec3> animationYellowBackPoints = {
 glm::vec3(-20.0f, 3.0f, -18.0f),
 glm::vec3(0.0f, 6.0f, -18.0f),
@@ -95,7 +103,6 @@ glm::vec3(-16.0f, 6.0f, -10.0f),
 glm::vec3(-9.0f, 0.0f, -10.0f),
 glm::vec3(0.0f, 4.0f, -10.0f),
 glm::vec3(20.0f, 0.0f, -10.0f),
-// we can add however many control points as we like (main points where the tear drop should go through)
 };
 
 std::vector<glm::vec3> animationGoldenBackPoints = {
@@ -117,9 +124,6 @@ glm::vec3 deCasteljau(std::vector<glm::vec3> points, float t_forward) {
 	return deCasteljau(newPoints, t_forward);
 }
 
-float t_forward = 0.0f;
-float t_back = 0.0f;
-//float anotherT = 3;
 
 void CreateScene()
 {
@@ -148,26 +152,32 @@ void CreateScene()
 	gRoot->AddChild(trYellow);
 
 	TransformNode* trSand = new TransformNode("Sand");
-	trSand->SetTranslation(glm::vec3(4.0f, 17.0f, -2.0f));
-	trSand->SetScale(glm::vec3{ 2.5f,2.5f,2.5f });
-	trSand->SetRotation(glm::vec3(90.0f, 0.0f, 0.0f));
+	trSand->SetTranslation(glm::vec3(5.0f, 17.0f, -2.0f));
+	trSand->SetScale(glm::vec3{ 2.9f,2.5f,2.5f });
+	trSand->SetRotation(glm::vec3(85.0f, 0.0f, 0.0f));
 
 	GeometryNode* sandfield = new GeometryNode("Sand");
 	sandfield->LoadFromFile("./models/Sand/model.obj");
 	sandfield->SetShader(&gShader);
 	trSand->AddChild(sandfield);
-	gRoot->AddChild(trSand);
-		
-	// Update fish translation based on de Casteljau algorithm
-	
-	
-	// Update fish translation based on time for animation
+	gRoot->AddChild(trSand);	
+
+
 	float time = SDL_GetTicks() * 0.001f;
-	float x = sin(time) * 5.0f; // Adjust the amplitude and frequency for desired movement
+	float x = sin(time) * 5.0f; 
 	float t_back = cos(time) * 5.0f;
-	//trFish->SetTranslation(glm::vec3(x, y, -30.0f)); // Adjust the depth as needed
 }
 
+void UpdateAnimationSpeed()
+{
+	Uint32 currentTime = SDL_GetTicks();
+	float deltaTime = (currentTime - lastFrameTime) / 1000.0f; // Convert to seconds
+	lastFrameTime = currentTime;
+
+	float adjustedSpeedFactor = speedFactor * deltaTime;
+	t_forward += 0.01f * adjustedSpeedFactor; // Adjust animation speed based on speed factor
+	t_back += 0.01f * adjustedSpeedFactor;
+}
 
 int main(int argc, char* args[])
 {
@@ -223,6 +233,7 @@ int main(int argc, char* args[])
 					break;
 				}
 			}
+
 		}
 
 		//Render
@@ -253,6 +264,16 @@ void HandleKeyDown(const SDL_KeyboardEvent& key)
 		break;
 	case SDLK_d:
 		camera.ProcessKeyboard(RIGHT, deltaTime);
+		break;
+	case SDLK_LEFT: // Decrease animation speed
+		speedFactor -= 0.1f; // Decrease speed factor
+		if (speedFactor < 0.1f) // Limit minimum speed factor
+			speedFactor = 0.1f;
+		printf("Speed decreaded\n");
+		break;
+	case SDLK_RIGHT: // Increase animation speed
+		speedFactor += 0.1f;
+		printf("Speed increased\n");
 		break;
 	}
 }
@@ -388,7 +409,7 @@ void render()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	if (t_forward <= 1) {
-		t_forward += 0.002f;
+		t_forward += 0.001f * speedFactor;;
 		trYellow->SetTranslation(deCasteljau({ animationYellow }, t_forward));
 		trGolden->SetTranslation(deCasteljau({ animationGolden }, t_forward));
 
@@ -398,41 +419,35 @@ void render()
 		t_back = 0;
 	}
 	else {		
-		t_back += 0.002f;
+		t_back += 0.001f * speedFactor;;
 		trYellow->SetTranslation(deCasteljau({ animationYellowBackPoints }, t_back));
 		trGolden->SetTranslation(deCasteljau({ animationGoldenBackPoints }, t_back));
 
 		trYellow->SetRotation(glm::vec3(trYellow->GetRotation().x, trYellow->GetRotation().y, 180));
 		trGolden->SetRotation(glm::vec3(trGolden->GetRotation().x, trGolden->GetRotation().y, 180));
 		
-		if (t_back > 1)
-		{
+		if (t_back > 1) {
 			t_forward = 0;
 		}
 	}
-
+	
+	UpdateAnimationSpeed();
 
 	glm::mat4 view = camera.GetViewMatrix();
 	glm::mat4 proj = glm::perspective(glm::radians(camera.Zoom), 4.0f / 3.0f, 0.1f, 100.0f);
 
-	//glm::mat3 normalMat = glm::transpose(glm::inverse(model));
 
 	glUseProgram(gShader.ID);
-	//gShader.setMat4("model", model);
 	gShader.setMat4("view", view);
 	gShader.setMat4("proj", proj);
-	//gShader.setMat3("normalMat", normalMat);
 
 	//lighting
 	gShader.setVec3("light.diffuse", 1.0f, 1.0f, 1.0f);
 	gShader.setVec3("light.position", lightPos);
 	gShader.setVec3("viewPos", camera.Position);
 
-	//gModel.Draw(gShader);
 	gRoot->Traverse();
+
 	
 }
-
-
-
 
