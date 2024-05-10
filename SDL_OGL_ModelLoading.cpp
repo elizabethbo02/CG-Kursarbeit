@@ -14,7 +14,6 @@
 #include "GeometryNode.h"
 #include "GroupNode.h"
 #include "TransformNode.h"
-#include "stb_image.h"
 
 #include <iostream>
 
@@ -162,6 +161,16 @@ void CreateScene()
 	trSand->AddChild(sandfield);
 	gRoot->AddChild(trSand);	
 
+	TransformNode* trLabel = new TransformNode("Text");
+	trYellow->SetTranslation(glm::vec3(18.0f, 16.0f, -45.0f));
+	trLabel->SetScale(glm::vec3{ 1.0f,1.0f,1.0f });
+	trLabel->SetRotation(glm::vec3(0.0f, -90.0f, 0.0f));
+
+	GeometryNode* textLabel = new GeometryNode("Text");
+	textLabel->LoadFromFile("./models/Instr/instructions.obj");
+	textLabel->SetShader(&gShader);
+	trLabel->AddChild(textLabel);
+	gRoot->AddChild(trLabel);
 
 	float time = SDL_GetTicks() * 0.001f;
 	float x = sin(time) * 5.0f; 
