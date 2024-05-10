@@ -6,6 +6,7 @@
 #include <SDL_opengl.h>
 #include <stdio.h>
 #include <gl\GLU.h>
+#include "stb_image.h"
 
 #include <glm\glm.hpp>
 #include <glm\gtc\matrix_transform.hpp>
@@ -162,9 +163,9 @@ void CreateScene()
 	gRoot->AddChild(trSand);	
 
 	TransformNode* trLabel = new TransformNode("Text");
-	trYellow->SetTranslation(glm::vec3(18.0f, 16.0f, -45.0f));
-	trLabel->SetScale(glm::vec3{ 1.0f,1.0f,1.0f });
-	trLabel->SetRotation(glm::vec3(0.0f, -90.0f, 0.0f));
+	trLabel->SetTranslation(glm::vec3(2.3f, 1.8f, 9.0f));
+	trLabel->SetScale(glm::vec3{ 0.3f,0.3f,0.3f});
+	trLabel->SetRotation(glm::vec3(-25.0f, -90.0f, 5.0f));
 
 	GeometryNode* textLabel = new GeometryNode("Text");
 	textLabel->LoadFromFile("./models/Instr/instructions.obj");
@@ -313,7 +314,7 @@ bool init()
 	//Initialization flag
 	bool success = true;
 
-	//Initialize SDL
+		//Initialize SDL
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
 	{
 		printf("SDL could not initialize! SDL Error: %s\n", SDL_GetError());
@@ -330,6 +331,25 @@ bool init()
 		//Create window
 		gWindow = SDL_CreateWindow("Underwater World", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480,
 			SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN /*| SDL_WINDOW_FULLSCREEN*/);
+
+		int width, height, channels;
+		unsigned char* iconPixels = stbi_load("./fish-icon.png", &width, &height, &channels, STBI_rgb_alpha);
+
+		if (iconPixels == NULL) {
+			printf("Unable to load image!\n");
+		}
+		else {
+			// Convert pixel data to SDL_Surface
+			SDL_Surface* iconSurface = SDL_CreateRGBSurfaceFrom(iconPixels, width, height, 32, width * 4, 0x000000FF, 0x0000FF00, 0x00FF0000, 0xFF000000);
+
+			// Set the icon for the window
+			SDL_SetWindowIcon(gWindow, iconSurface);
+
+			// Free the pixel data and surface after setting the icon
+			stbi_image_free(iconPixels);
+			SDL_FreeSurface(iconSurface);
+		}
+
 		if (gWindow == NULL)
 		{
 			printf("Window could not be created! SDL Error: %s\n", SDL_GetError());
